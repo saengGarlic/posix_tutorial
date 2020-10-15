@@ -224,7 +224,7 @@ void merge_name(Row *arr, int s, int e, int m){
 			i++;
 		}
 		else{			
-			if(strcmp((arr+i)->name, (arr+j)->name) > 0){
+			if(strcmp((arr+i)->name, (arr+j)->name) < 0){
 				rowinsert(temp, arr, n, i);
 				n++;
 				i++;
