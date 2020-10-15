@@ -1,58 +1,6 @@
-/*
-1. ë¼ì¦ˆë² ë¦¬íŒŒì´ì™€ ì»´í“¨í„°ë¥¼ ì—°ê²°í•˜ì—¬ ssh êµ¬ë™ ê°€ëŠ¥
-2. ì²¨ë¶€ì˜ íŒŒì¼ì„ ì½ì–´ì„œ ë‹¤ìŒì˜ í”„ë¡œê·¸ë¨ì„ êµ¬í˜„í•˜ì‹œì˜¤.
-
-ë‚˜ì´ë³„, ì´ë¦„ë³„, ì§€ì—­ë³„(zip code) ë¶„í¬ë¥¼ êµ¬í•˜ì‹œì˜¤.
-
-ìˆœì„œëŠ” ìˆ«ì, ì•ŒíŒŒë²³ ì˜¤ë¦„ì°¨ìˆœìœ¼ë¡œ ì •ë¦¬
-
-ë‚˜ì´ : 10 ~ 89
-zip code : 001 ~ 015
-
----------------------------
-íŒŒì¼ ë‚´ìš©
-
-24,ABC,KS003
-
-32,BCD,KS005
-
-...
-
-----------------------------
-
- 
-
-ê²°ê³¼ ì¶œë ¥ ì˜ˆì œ
-
-
-ì „ì²´ ë°ì´í„° ê°¯ìˆ˜ 1,000,000ê°œ ì¤‘ ì´ë¦„ì€ xx,xxxê°œ
-ë‚˜ì´:
-
-10 ~ 19 : 3,423ëª…
-
-20 ~ 29 : 5,333ëª…
-
-..
-
-80 ~ 89 : xxxëª…
-
- 
-
-Zip code
-
-KS001: xxxxxëª…
-
-KS002: xxxxxëª…
-
-...
-
-KS015: xxxxxëª…
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <pthread.h>
 
 
 typedef struct Row{
@@ -62,65 +10,139 @@ typedef struct Row{
 	int zip;
 }Row;
 
-void mergesort(Row *arr, int s, int e);
 void mergesort_age(Row *arr, int s, int e);
 void mergesort_name(Row *arr, int s, int e);
 void mergesort_zip(Row *arr, int s, int e);
 
 
-
 int main()
 {
 	Row *row_arr, *temp;
-	
+	Row tmp;
 	int lineNum, i;
 	char c;
 	FILE *fp;
 	
+	int ageMax, ageMin, zipMax, zipMin;
+	int ageInterval, zipInterval, ageDistNum, zipDistNum;
+	int nameNum;
+	int *ageDist, *zipDist, *nameList;
+	
 	
 	fp = fopen("data.txt", "r");
 	
-	if(fp != NULL) printf(">>file import success\n");
-	
-	//line ìˆ˜ í™•ì¸í›„ ì„ì‹œ êµ¬ì¡°ì²´ ë©”ëª¨ë¦¬ ë™ì í• ë‹¹
+	//line ¼ö È®ÀÎ
 	lineNum = 0;
 	while((c = fgetc(fp))!=EOF){
 		if(c=='\n') lineNum++;
 	}
 	printf("total line:%d\n",lineNum);
+		
+	ageInterval = 10;
+	zipInterval = 1;
+	nameNum = 0;
+	ageMin = 100;
+	zipMin = 20;
+	ageMax = 0;
+	zipMax = 0;
+	
 	
 	row_arr = (Row *)malloc(sizeof(Row)*lineNum);
 	temp = row_arr;
 	if(row_arr != NULL) printf(">>memory allocation success\n");
 	
 	rewind(fp);
-	
-	//temp 
-	i = 0;
-	while(i<lineNum){
+	for(i = 0; i<lineNum; i++){
 		fscanf(fp, "%2d,%3s,%2s%3d", &(temp+i)->age, &(temp+i)->name, &(temp+i)->ziphead, &(temp+i)->zip);
-		i++;
 	}
-	fclose(fp);	
 	
-	//mergesort_age(temp, 0, lineNum-1);
+	//ºĞÆ÷ ÃÊ±âÈ­ÇÒ ÆĞ·¯¹ÌÅÍµé ¼¼ÆÃ
+	rewind(fp);
+	for(i = 0; i<=lineNum; i++){
+		fscanf(fp, "%2d,%3s,%2s%3d", &tmp.age, &tmp.name, &tmp.ziphead, &tmp.zip);
+		if(tmp.age < ageMin) ageMin = tmp.age - tmp.age%ageInterval;
+		if(tmp.zip < zipMin) zipMin = tmp.zip;
+	}
+	rewind(fp);
+	for(i = 0; i<=lineNum; i++){
+		fscanf(fp, "%2d,%3s,%2s%3d", &tmp.age, &tmp.name, &tmp.ziphead, &tmp.zip);
+		if(tmp.age > ageMax) ageMax = tmp.age/ageInterval * ageInterval;
+		if(tmp.zip > zipMax) zipMax = tmp.zip;
+	}
+	
+	ageDistNum = (ageMax - ageMin)/ageInterval + 1;
+	zipDistNum = (zipMax - zipMin)/zipInterval + 1;
+	ageDist = (int*)malloc(sizeof(int)*ageDistNum);
+	zipDist = (int*)malloc(sizeof(int)*zipDistNum);
+	
+	//ºĞÆ÷ ¹è¿­ ÃÊ±âÈ­
+	for(i = 0; i < ageDistNum; i++){
+		*(ageDist + i) = 0;
+	}
+	for(i = 0; i < zipDistNum; i++){
+		*(zipDist + i) = 0;
+	}
+	printf("age %d/%d, ageDistNum %d, zip %d/%d, zipDistNum %d\n\n", ageMin, ageMax, ageDistNum, zipMin, zipMax, zipDistNum);
+	
+	
+	//ÀÌ¸§±âÁØ ¿À¸§Â÷¼ø Á¤·Ä
 	mergesort_name(temp, 0, lineNum-1);
-	//mergesort_zip(temp, 0, lineNum-1);
-	//mergesort(temp, 0, lineNum-1);
 	
-	//output.txtì— write
-	fp = fopen("output.txt", "w");
-	i = 0;
-	while(i < lineNum){
-		fprintf(fp, "%2d,%3s,%2s%3d\n", (temp+i)->age, (temp+i)->name, (temp+i)->ziphead, (temp+i)->zip);
-		i++;
+	fp = fopen("sorted_byname.txt", "w");
+	for(i = 0; i < lineNum; i++){
+		fprintf(fp, "%2d,%3s,%2s%03d\n", (temp+i)->age, (temp+i)->name, (temp+i)->ziphead, (temp+i)->zip);	
+		if(i == 0) nameNum++;
+		else if(strcmp((temp+i-1)->name, (temp+i)->name) != 0) nameNum++;
+	}
+	printf("ÀüÃ¼ µ¥ÀÌÅÍ °¹¼ö %d°³ Áß ÀÌ¸§Àº %d°³\n\n", lineNum, nameNum);
+	fclose(fp);
+	
+	
+	//³ªÀÌ±âÁØ ¿À¸§Â÷¼ø Á¤·Ä
+	mergesort_age(temp, 0, lineNum-1);
+	
+	fp = fopen("sorted_byage.txt", "w");
+	for(i = 0; i < lineNum; i++){
+		fprintf(fp, "%2d,%3s,%2s%03d\n", (temp+i)->age, (temp+i)->name, (temp+i)->ziphead, (temp+i)->zip);			
+		*(ageDist + ((temp+i)->age - (temp+i)->age%ageInterval)/ageInterval - 1) += 1;
 	}
 	fclose(fp);
+	
+	//ÁÖ¼Ò±âÁØ ¿À¸§Â÷¼ø Á¤·Ä
+	mergesort_zip(temp, 0, lineNum-1);
+	
+	fp = fopen("sorted_byzip.txt", "w");
+	for(i = 0; i < lineNum; i++){
+		fprintf(fp, "%2d,%3s,%2s%03d\n", (temp+i)->age, (temp+i)->name, (temp+i)->ziphead, (temp+i)->zip);			
+		*(zipDist + (temp+i)->zip - 1) += 1;
+	}
+	fclose(fp);
+	
+	//output.txt Ãâ·Â
+	fp = fopen("output.txt", "w");
+	
+	fprintf(fp, "ÀüÃ¼ µ¥ÀÌÅÍ °¹¼ö %d°³ Áß ÀÌ¸§Àº %d°³\n\n", lineNum, nameNum);
+	fprintf(fp, "³ªÀÌ\n\n");
+	printf("³ªÀÌ:\n\n");
+	for(i = 1; i < ageDistNum+1; i++){
+		fprintf(fp, "%d ~ %d : %d ¸í\n\n", i*ageInterval, (i+1)*ageInterval, *(ageDist+i-1));
+		printf("%d ~ %d¼¼: %d¸í\n\n", i*ageInterval, (i+1)*ageInterval, *(ageDist+i-1));
+	}
+	fprintf(fp, "Zip code\n\n");
+	printf("Zip code\n\n");
+	for(i = 1; i < zipDistNum+1; i++){
+		fprintf(fp, "%s%03d : %d ¸í\n\n", tmp.ziphead, i*zipInterval, *(zipDist+i-1));
+		printf("%s%03d : %d¸í\n\n", tmp.ziphead, i*zipInterval, *(zipDist+i-1));
+	}
+	fclose(fp);
+	
 	free(row_arr);
+	free(ageDist);
+	free(zipDist);
+	
 	
 }
 
-void getminmax(
 
 void rowinsert(Row* target, Row* source, int tn, int sn){
 	
@@ -128,80 +150,6 @@ void rowinsert(Row* target, Row* source, int tn, int sn){
 	strcpy((target + tn)->name, (source + sn)->name);
 	strcpy((target + tn)->ziphead, (source + sn)->ziphead);
 	(target + tn)->zip = (source + sn)->zip;
-}
-
-//s: start e:end 
-void merge(Row *arr, int s, int e, int m){
-	
-	int i = s;
-	int j = m + 1;
-	int n = 0;
-	int size = e - s + 1;
-	Row *temp_arr, *temp;
-	
-	temp_arr = (Row*)malloc(sizeof(Row)*size);
-	temp = temp_arr;
-	
-	printf("merge called from %d to %d of size:%d\n", s, e, size);
-	while((i <= m) || (j <= e)){
-		if(i > m){
-			rowinsert(temp, arr, n, j);
-			n++;
-			j++;
-		}
-		else if(j > e){
-			rowinsert(temp, arr, n, i);
-			n++;
-			i++;
-		}
-		else{
-			if((arr+i)->age == (arr+j)->age){
-				if(strcmp((arr+i)->name, (arr+j)->name) == 0){								
-					if((arr+i)->zip < (arr+j)->zip){
-						rowinsert(temp, arr, n, i);
-						n++;
-						i++;
-					}
-					else{
-						rowinsert(temp, arr, n, j);
-						n++;
-						j++;
-					}
-				}
-				else if(strcmp((arr+i)->name, (arr+j)->name) < 0){
-					rowinsert(temp, arr, n, i);
-					n++;
-					i++;
-				}
-				else{
-					rowinsert(temp, arr, n, j);
-					n++;
-					j++;
-				}
-			}
-				
-			else if((arr+i)->age < (arr+j)->age){
-				rowinsert(temp, arr, n, i);
-				n++;
-				i++;
-			}
-			else{
-				rowinsert(temp, arr, n, j);
-				n++;
-				j++;
-			}
-		}
-	}
-	
-	//ì›ë˜ë°°ì—´ì— ì§‘ì–´ë„£ê¸°
-	n = 0;
-	for(i = s; i <= e; i++){
-		rowinsert(arr, temp, i, n);
-		n++;
-	}
-	
-	free(temp);
-		
 }
 
 void merge_age(Row *arr, int s, int e, int m){
@@ -215,7 +163,7 @@ void merge_age(Row *arr, int s, int e, int m){
 	temp_arr = (Row*)malloc(sizeof(Row)*size);
 	temp = temp_arr;
 	
-	printf("merge called from %d to %d of size:%d\n", s, e, size);
+	//printf("merge_age called from %d to %d of size:%d\n", s, e, size);
 	while((i <= m) || (j <= e)){
 		if(i > m){
 			rowinsert(temp, arr, n, j);
@@ -228,9 +176,7 @@ void merge_age(Row *arr, int s, int e, int m){
 			i++;
 		}
 		else{
-			if((arr+i)->age == (arr+j)->age)
-			
-			else if((arr+i)->age < (arr+j)->age){
+			if((arr+i)->age < (arr+j)->age){
 				rowinsert(temp, arr, n, i);
 				n++;
 				i++;
@@ -243,7 +189,7 @@ void merge_age(Row *arr, int s, int e, int m){
 		}
 	}
 	
-	//ì›ë˜ë°°ì—´ì— ì§‘ì–´ë„£ê¸°
+	//¿ø·¡¹è¿­¿¡ Áı¾î³Ö±â
 	n = 0;
 	for(i = s; i <= e; i++){
 		rowinsert(arr, temp, i, n);
@@ -265,7 +211,7 @@ void merge_name(Row *arr, int s, int e, int m){
 	temp_arr = (Row*)malloc(sizeof(Row)*size);
 	temp = temp_arr;
 	
-	printf("merge called from %d to %d of size:%d\n", s, e, size);
+	//printf("merge_name called from %d to %d of size:%d\n", s, e, size);
 	while((i <= m) || (j <= e)){
 		if(i > m){
 			rowinsert(temp, arr, n, j);
@@ -278,9 +224,7 @@ void merge_name(Row *arr, int s, int e, int m){
 			i++;
 		}
 		else{			
-			if(strcmp((arr+i)->name, (arr+j)->name) == 0)
-			
-			else if(strcmp((arr+i)->name, (arr+j)->name) < 0){
+			if(strcmp((arr+i)->name, (arr+j)->name) > 0){
 				rowinsert(temp, arr, n, i);
 				n++;
 				i++;
@@ -294,7 +238,7 @@ void merge_name(Row *arr, int s, int e, int m){
 		}
 	}
 	
-	//ì›ë˜ë°°ì—´ì— ì§‘ì–´ë„£ê¸°
+	//¿ø·¡¹è¿­¿¡ Áı¾î³Ö±â
 	n = 0;
 	for(i = s; i <= e; i++){
 		rowinsert(arr, temp, i, n);
@@ -316,7 +260,7 @@ void merge_zip(Row *arr, int s, int e, int m){
 	temp_arr = (Row*)malloc(sizeof(Row)*size);
 	temp = temp_arr;
 	
-	printf("merge called from %d to %d of size:%d\n", s, e, size);
+	//printf("merge_zip called from %d to %d of size:%d\n", s, e, size);
 	while((i <= m) || (j <= e)){
 		if(i > m){
 			rowinsert(temp, arr, n, j);
@@ -329,9 +273,7 @@ void merge_zip(Row *arr, int s, int e, int m){
 			i++;
 		}
 		else{										
-			if((arr+i)->zip == (arr+j)->zip){
-				
-			else if((arr+i)->zip < (arr+j)->zip){
+			if((arr+i)->zip < (arr+j)->zip){
 				rowinsert(temp, arr, n, i);
 				n++;
 				i++;
@@ -344,7 +286,7 @@ void merge_zip(Row *arr, int s, int e, int m){
 		}
 	}
 	
-	//ì›ë˜ë°°ì—´ì— ì§‘ì–´ë„£ê¸°
+	//¿ø·¡¹è¿­¿¡ Áı¾î³Ö±â
 	n = 0;
 	for(i = s; i <= e; i++){
 		rowinsert(arr, temp, i, n);
@@ -353,18 +295,6 @@ void merge_zip(Row *arr, int s, int e, int m){
 	
 	free(temp);
 		
-}
-
-
-void mergesort(Row *arr, int s, int e){
-	if(s<e){
-		int m = (s+e)/2;
-		
-		mergesort(arr, s, m);
-		mergesort(arr, m+1, e);
-		
-		merge(arr, s, e, m);
-	}
 }
 
 void mergesort_age(Row *arr, int s, int e){
